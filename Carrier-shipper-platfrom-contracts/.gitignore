@@ -1,0 +1,9 @@
+node_modules/
+types/truffle-contracts/
+tsconfig.tsbuildinfo
+coverage/
+coverage.json
+config/local.json
+.DS_Store
+yarn-*
+output
