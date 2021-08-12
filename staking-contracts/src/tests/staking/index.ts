@@ -19,6 +19,7 @@ contract("Staking", (accounts) => {
     async (owner) => {
       const CONSTRUCTOR_PARAMS = await getDefaultConstructorParams(
         MockedStakingToken,
+        false,
         { owner_: owner }
       );
       return Staking.new(

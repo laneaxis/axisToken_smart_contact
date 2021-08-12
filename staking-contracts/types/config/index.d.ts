@@ -6,6 +6,7 @@ declare module "config" {
     readonly INTERVALS_COUNT: number,
     readonly INTERVAL_DURATION: number
     readonly SIZE: number | string;
+    readonly MONTHLY: boolean;
   }
 
   export const INFURA_KEY: string;

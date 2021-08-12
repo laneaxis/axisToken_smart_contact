@@ -14,7 +14,7 @@ describe("Constructor", () => {
   const INVALID_VALUE = "0";
   describe("When revenue is not positive", () => {
     before(async () => {
-      defaultParams = await getDefaultConstructorParams(MockedStakingToken, {
+      defaultParams = await getDefaultConstructorParams(MockedStakingToken, false, {
         revenue_: INVALID_VALUE,
       });
     });
@@ -26,7 +26,7 @@ describe("Constructor", () => {
   });
   describe("When intervals count is not positive", () => {
     before(async () => {
-      defaultParams = await getDefaultConstructorParams(MockedStakingToken, {
+      defaultParams = await getDefaultConstructorParams(MockedStakingToken, false, {
         intervalsCount_: INVALID_VALUE,
       });
     });
@@ -38,7 +38,7 @@ describe("Constructor", () => {
   });
   describe("When interval duration is not positive", () => {
     before(async () => {
-      defaultParams = await getDefaultConstructorParams(MockedStakingToken, {
+      defaultParams = await getDefaultConstructorParams(MockedStakingToken, false, {
         intervalDuration: INVALID_VALUE,
       });
     });
@@ -50,7 +50,7 @@ describe("Constructor", () => {
   });
   describe("When size is not positive", () => {
     before(async () => {
-      defaultParams = await getDefaultConstructorParams(MockedStakingToken, {
+      defaultParams = await getDefaultConstructorParams(MockedStakingToken, false, {
         size_: INVALID_VALUE,
       });
     });

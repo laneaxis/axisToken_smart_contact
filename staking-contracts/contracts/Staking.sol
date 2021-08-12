@@ -2,31 +2,16 @@
 pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "solowei/contracts/TwoStageOwnable.sol";
+import "./StakingBase.sol";
 
-contract Staking is TwoStageOwnable {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
-
-    struct StakeData {
-        uint256 amount;
-        uint256 rewards;
-        uint256 withdrawn;
-        uint256 startsAt;
-    }
-
-    uint256 public minStakeAmount;
-    uint256 public revenue;
-    IERC20 public stakingToken;
-
+contract Staking is StakingBase, TwoStageOwnable {
     uint256 private _freeSize;
     uint256 private _intervalsCount;
+    uint256 private _size;
+
     uint256 private _intervalDuration;
     uint256 private _rewardPool;
-    uint256 private _size;
     uint256 private _totalStaked;
     mapping(address => StakeData[]) private _stakedInformation;
 
@@ -63,14 +48,12 @@ contract Staking is TwoStageOwnable {
     }
 
     function availableToWithdraw(address account, uint256 id) public view returns (uint256 amountToWithdraw) {
-        StakeData storage stakeData = _getStake(account, id);
-        uint256 pastIntervalsCount = getTimestamp().sub(stakeData.startsAt).div(_intervalDuration);
-        uint256 intervalRewards = stakeData.rewards.div(_intervalsCount);
-        amountToWithdraw = pastIntervalsCount.mul(intervalRewards);
-        if (stakeData.rewards < amountToWithdraw) {
-            amountToWithdraw = stakeData.rewards;
-        }
-        amountToWithdraw = amountToWithdraw.sub(stakeData.withdrawn);
+        StakeData storage stake_ = _getStake(account, id);
+        uint256 pastIntervalsCount = getTimestamp().sub(stake_.startsAt).div(_intervalDuration);
+        amountToWithdraw = pastIntervalsCount < _intervalsCount
+            ? stake_.rewards.mul(pastIntervalsCount).div(_intervalsCount)
+            : stake_.rewards.add(stake_.amount);
+        amountToWithdraw = amountToWithdraw.sub(stake_.withdrawn);
     }
 
     function getStake(address account, uint256 id) public view returns (StakeData memory) {
@@ -95,12 +78,6 @@ contract Staking is TwoStageOwnable {
             stakeData[i - offset] = stakedInformation[stakedInformationLength - i - 1];
         }
     }
-
-    event MinStakeAmountUpdated(address indexed owner, uint256 value);
-    event Staked(address indexed account, uint256 stakeId, uint256 amount);
-    event RewardPoolDecreased(address indexed owner, uint256 amount);
-    event RewardPoolIncreased(address indexed owner, uint256 amount);
-    event Withdrawn(address indexed account, uint256 stakeId, uint256 amount);
 
     constructor(
         address owner_,
@@ -159,7 +136,7 @@ contract Staking is TwoStageOwnable {
         _stakedInformation[caller].push();
         StakeData storage stake_ = _stakedInformation[caller][stakeId];
         stake_.amount = amount;
-        stake_.rewards = rewards.add(amount);
+        stake_.rewards = rewards;
         stake_.startsAt = getTimestamp();
         stakingToken.safeTransferFrom(caller, address(this), amount);
         emit Staked(caller, stakeId, amount);
@@ -169,11 +146,11 @@ contract Staking is TwoStageOwnable {
     function withdraw(uint256 id, uint256 amount) external onlyPositiveAmount(amount) returns (bool) {
         address caller = msg.sender;
         require(amount <= availableToWithdraw(caller, id), "Not enough available tokens");
-        uint256 stakeSubAmount = amount.mul(100).div(revenue.add(100));
-        _rewardPool = _rewardPool.sub(amount.sub(stakeSubAmount));
-        _totalStaked = _totalStaked.sub(stakeSubAmount);
-        StakeData storage stakeData = _stakedInformation[caller][id];
-        stakeData.withdrawn = stakeData.withdrawn.add(amount);
+        StakeData storage stake_ = _stakedInformation[caller][id];
+        (uint256 rewardsSubValue, uint256 totalStakedSubValue) = _calculateWithdrawAmountParts(stake_, amount);
+        _rewardPool = _rewardPool.sub(rewardsSubValue);
+        _totalStaked = _totalStaked.sub(totalStakedSubValue);
+        stake_.withdrawn = stake_.withdrawn.add(amount);
         stakingToken.safeTransfer(caller, amount);
         emit Withdrawn(caller, id, amount);
         return true;
@@ -186,10 +163,5 @@ contract Staking is TwoStageOwnable {
     function _getStake(address account, uint256 id) internal view returns (StakeData storage) {
         require(id < _stakedInformation[account].length, "Invalid stake id");
         return _stakedInformation[account][id];
-    }
-
-    modifier onlyPositiveAmount(uint256 amount) {
-        require(amount > 0, "Amount not positive");
-        _;
     }
 }

@@ -3,10 +3,10 @@ pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./AbstractMocked.sol";
 import "../Staking.sol";
 
-contract MockedStaking is Staking {
-    uint256 public mockedTimestamp;
+contract MockedStaking is Staking, AbstractMocked {
 
     function getTimestamp() internal override(Staking) view returns (uint256) {
         return mockedTimestamp;
@@ -21,9 +21,5 @@ contract MockedStaking is Staking {
         uint256 size_
     ) public Staking(owner_, stakingToken_, revenue_, intervalsCount_, intervalDuration_, size_) {
         mockedTimestamp = block.timestamp;
-    }
-
-    function increaseTime(uint256 count) public {
-        mockedTimestamp += count;
     }
 }

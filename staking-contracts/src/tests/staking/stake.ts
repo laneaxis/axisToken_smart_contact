@@ -43,6 +43,7 @@ describe("Method: stake(amount: uint256): bool", () => {
     before(async () => {
       const CONSTRUCTOR_PARAMS = await getDefaultConstructorParams(
         MockedStakingToken,
+        false,
         { size_: "100" }
       );
       localContract = await Staking.new(
@@ -117,7 +118,7 @@ describe("Method: stake(amount: uint256): bool", () => {
       let expectedStartsAt: BN;
       before(async () => {
         const revenue = await contract.revenue();
-        expectedRewards = STAKE.mul(revenue.addn(100)).divn(100);
+        expectedRewards = STAKE.mul(revenue).divn(100);
         expectedStartsAt = await web3.eth
           .getBlock(result.receipt.blockNumber)
           .then((res) => new BN(res.timestamp));
